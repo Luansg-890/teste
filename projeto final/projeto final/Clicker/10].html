@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+ <head>
+    <meta charset="utf-8">
+   <link rel="stylesheet" href="texte2.css">
+   <link rel="shortcut icon" type="image/webp" href="OIP.webp"> 
+   <title>Clicker NaN</title>
+ </head>
+<body>
+   <div id="custom-cursor"></div>
+      <div id="g-verde">
+      <p id="tverde1">
+         Mais 1
+      </p>
+      <button type="button" value="Mais 1" id="upgrade" class="verde">
+         <span id="mais1">Nível: 1</span><br>
+         <span id="valor1">Valor: 25</span>
+      </button>
+      <button type="button" value="2 vezes" id="upgrade2" class="verde"> 
+         <span id="x">Nível: 1</span><br>
+         <span id="valor2">Valor: 1000</span>
+      </button>
+      <p id="tverde2">
+         2 vezes
+      </p>
+      </div>
+
+      <button type="button" value="clicker" id="amarelo">
+         <span id="clicker">click me</span>
+      </button>
+
+      <div id="g-azul">
+      <p id="tazul1">
+         Automático 1
+      </p>
+      <button type="button" value="click 1" id="automatico1" class="azul">
+         <span id="automaticoy">Nível: 1</span><br>
+         <span id="valor3">Valor: 50</span>
+      </button>
+      <button type="button" value="click 2" id="automatico2" class="azul">
+         <span id="automaticox">Nível: 1</span><br>
+         <span id="valor4">Valor: 1000</span>
+      </button>
+      <p id="tazul2">
+         Automático 2
+      </p>
+      </div>
+
+      <script>
+      // Variáveis de Nível e Multiplicadores
+      // i: Nível do upgrade "Mais 1" e multiplicador de ganho por clique (inicialmente 1)
+      // u: Nível do upgrade "2 vezes" (multiplica 'i')
+      // k: Nível do upgrade "Automático 2"
+      // t: Multiplicador de custo/efeito do upgrade "2 vezes"
+      // b: Nível do upgrade "Automático 1"
+      let i = 1, u = 1, k = 1, t = 1, b = 1;
+      
+      // c: Contador principal de pontos/clicks (inicialmente 0)
+      var c = 0;
+
+      // Variáveis para armazenar os IDs dos intervalos automáticos 
+      // (não utilizadas nos intervalos atuais, mas boas para o controle)
+      let auto1Interval = null;
+      let auto2Interval = null;
+
+      // Seleção de Elementos do DOM
+      const cursor = document.getElementById('custom-cursor');
+      const buttons = document.querySelectorAll('button');
+
+      var buttonamarelo = document.querySelector("#amarelo");
+      var buttonverde = document.querySelector("#upgrade");
+      var buttonverde2 = document.querySelector("#upgrade2");
+      var buttonazul = document.querySelector("#automatico1");
+      var buttonazul2 = document.querySelector("#automatico2");
+
+      // Elementos span para exibir Níveis e Pontuação
+      var mais1 = document.querySelector("#mais1");
+      var x = document.querySelector("#x");
+      var clicker = document.querySelector("#clicker");
+      var automaticoy = document.querySelector("#automaticoy");
+      var automaticox = document.querySelector("#automaticox");
+
+      // Elementos span para exibir Custos
+      var valor1 = document.querySelector("#valor1");
+      var valor2 = document.querySelector("#valor2");
+      var valor3 = document.querySelector("#valor3");
+      var valor4 = document.querySelector("#valor4");
+    
+    // --- Lógica do Upgrade "Mais 1" (Botão Verde) ---
+   buttonverde.addEventListener("click", updateButtonverde);
+   function updateButtonverde() {
+         // d: Custo atual = 25 * Nível atual (i)
+         let d = 25*i;
+            // Verifica se a pontuação (c) é suficiente para o upgrade
+            if (c >= d){
+               c -= d; // Deduz o custo
+               i++; // Aumenta o nível 'i' (e o multiplicador de clique)
+               mais1.textContent = "Nível: " + i; // Atualiza o Nível
+               valor1.textContent = "Valor: " + i*25; // Atualiza o próximo Custo
+               clicker.textContent = c; // Atualiza a pontuação exibida
+            }
+    }
+
+    // --- Lógica do Upgrade "2 vezes" (Botão Verde 2) ---
+   buttonverde2.addEventListener("click", updateButtonverde2);
+   function updateButtonverde2() {
+         // p: Custo atual = 1000 * Multiplicador de custo (t)
+         let p = 1000*t;
+            // Verifica se a pontuação (c) é suficiente
+            if (c >= p){
+               c -= p; // Deduz o custo
+               i *= 2; // **Multiplica o ganho por clique ('i') por 2**
+               t *= 2; // Multiplica o custo-base ('t') por 2 para o próximo upgrade
+               u++; // Aumenta o nível de exibição 'u'
+               x.textContent = "Nível: " + u; // Atualiza o Nível
+               valor2.textContent = "Valor: " + t*1000; // Atualiza o próximo Custo
+               clicker.textContent = c; // Atualiza a pontuação exibida
+            }
+    }
+
+    // --- Lógica do Botão Principal (Clicker Amarelo) ---
+   buttonamarelo.addEventListener("click", updateButtonamarelo);
+   function updateButtonamarelo() {
+      
+      // Adiciona e remove uma classe para criar um efeito visual de clique
+      buttonamarelo.classList.toggle('is-enlarged'); 
+
+      setTimeout(() => {
+         buttonamarelo.classList.remove('is-enlarged'); 
+      },135);
+
+    // Checagem de segurança para evitar que a pontuação vire NaN
+   if (typeof c === 'number' && !Number.isNaN(c)){
+         // Se 'i' for 2 ou mais (ou seja, se "Mais 1" foi comprado pelo menos 1 vez)
+         if (i >= 2){
+            // O ganho é 2 * (i - 1). Nota: Se i=2, ganha 2. Se i=3, ganha 4. Se i=4, ganha 6.
+            // O ganho parece ser: (1 + 2*(i-1)), mas o código atual é c + 2*(i-1).
+            // Quando i=1, cai no 'else' e ganha 1. Quando i=2, ganha 2.
+            // OBSERVAÇÃO: a fórmula de ganho aqui está um pouco complexa. O ganho por clique é (2*(i-1)) se i>=2, ou 1 se i=1.
+            c = c+2*(i-1)
+         } else {
+            // Se i=1 (nível inicial), ganha apenas 1 ponto
+            c++;
+         }
+      clicker.textContent = c; // Atualiza a pontuação exibida
+   } else {
+      // Se a pontuação se tornar NaN (Not a Number)
+      alert ("Parabéns você quebrou o jogo.")
+   }
+   }
+
+    // --- Lógica do Upgrade "Automático 1" (Botão Azul) ---
+   buttonazul.addEventListener("click", updateButtonazul);
+   function updateButtonazul() {
+      // a: Custo atual = 50 * Nível atual (b)
+      let a = 50*b;
+      if (c >= a){ // Verifica se a pontuação é suficiente
+         c -= a; // Deduz o custo
+         b++; // Aumenta o nível 'b'
+         automaticoy.textContent = "Nível: " + b; // Atualiza o Nível
+         valor3.textContent = "Valor: " + b*50; // Atualiza o próximo Custo
+         clicker.textContent = c; // Atualiza a pontuação exibida
+         
+         // Cria um novo intervalo automático
+         let automático = setInterval(() => {
+               // Adiciona pontos. O ganho é 2 * Multiplicador de clique ('i')
+               c += 2*i;
+               clicker.textContent = c; // Atualiza a pontuação
+         },5000) // Ocorre a cada 5000 milissegundos (5 segundos)
+         // OBSERVAÇÃO: Cada clique neste botão *cria um novo* setInterval, sem limpar o anterior,
+         // o que faz com que o ganho aumente em cada compra.
+      }
+   }
+
+    // --- Lógica do Upgrade "Automático 2" (Botão Azul 2) ---
+   buttonazul2.addEventListener("click", updateButtonazul2);
+   function updateButtonazul2() {
+      // g: Custo atual = 1000 * Multiplicador de custo (k)
+      let g = 1000*k;
+      if (c >= g){ // Verifica se a pontuação é suficiente
+         c -= g; // Deduz o custo
+         k *= 2; // Multiplica o custo-base ('k') por 2 para o próximo upgrade
+         automaticox.textContent = "Nível: " + k; // Atualiza o Nível (mostra o multiplicador de custo)
+         valor4.textContent = "Valor: " + k*1000; // Atualiza o próximo Custo
+         clicker.textContent = c; // Atualiza a pontuação exibida
+         
+         // Cria um novo intervalo automático
+         let automático = setInterval(() => {
+               // Adiciona pontos. O ganho é 2 * Multiplicador de clique ('i')
+               c += 2*i;
+               clicker.textContent = c; // Atualiza a pontuação
+         },2000) // Ocorre a cada 2000 milissegundos (2 segundos)
+         // OBSERVAÇÃO: Assim como o Automático 1, cada clique *cria um novo* setInterval,
+         // aumentando o ganho automático a cada compra.
+      }
+   }
+
+    // --- Lógica do Cursor Personalizado ---
+
+    // Move o cursor personalizado para a posição do mouse
+   document.addEventListener('mousemove', (e) => {
+    cursor.style.left = e.clientX + 'px'; // Posição horizontal (X)
+    cursor.style.top = e.clientY + 'px'; // Posição vertical (Y)
+  });
+
+  // Função auxiliar para alterar a imagem de fundo do cursor personalizado
+  function setCursor(imageUrl) {
+  cursor.style.backgroundImage = `url('${imageUrl}')`;
+  }
+
+  // Adiciona eventos para mudar a imagem do cursor ao interagir com botões
+  buttons.forEach(button => {
+  
+  // Quando o mouse entra no botão
+  button.addEventListener('mouseenter', () => {
+    setCursor('../cursor2/alternate.gif');
+  });
+
+  // Quando o mouse sai do botão
+  button.addEventListener('mouseleave', () => {
+    setCursor('../cursor2/auto.gif');
+  });
+
+  // Quando o botão do mouse é pressionado (clique para baixo)
+  button.addEventListener('mousedown', () => {
+    setCursor('../cursor2/link.gif');
+  });
+
+  // Quando o botão do mouse é solto (clique para cima)
+  button.addEventListener('mouseup', () => {
+    setCursor('../cursor2/alternate.gif');
+  });
+});
+    
+        </script>
+
+</body>
+</html>

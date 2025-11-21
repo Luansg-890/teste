@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8">
+   <link rel="stylesheet" href="texte.css">
+   <link rel="shortcut icon" type="imagen.png" href="torre.png"> 
+   <title>Tower Defense</title>
+ </head>
+<body>
+  <div id="custom-cursor"></div>
+
+ <div id="ui-container">
+        <div id="info-bar"> 
+        <div id="info-dinheiro"> Dinheiro: <span id="valorDinheiro">100</span></div>
+         <div id="info-rodada"> Rodada: <span id="valorRodada">1</span></div>
+     </div>
+
+        <div id="botoesTorres">
+        <button id="btnRemover"><img class="t" src="caracpnum (3).png" alt="Remover Torre"></button>
+        <button id="btnTorre1"><img class="t" src="caracpnum.png" alt="Torre de fogo"></button>
+        <button id="btnTorre2"><img class="t" src="caracpnum (1).png" alt="Torre de Gelo"></button>
+        <button id="btnTorre3"><img class="t" src="caracpnum (2).png" alt="Torre de Ouro"></button> 
+        <button id="btnIniciar"><img class="t" src="inicio.png" alt="inicio"></button>     </div>
+</div>
+
+  <div id="map"><canvas></canvas></div>
+     <script>
+  // =====================
+  // CURSOR PERSONALIZADO
+  // =====================
+  document.addEventListener('DOMContentLoaded', () => {
+    const cursor = document.getElementById('custom-cursor'); // Pega o elemento do cursor
+
+    // Função para definir a imagem de fundo do cursor
+    function setCursor(imageUrl) {
+      cursor.style.backgroundImage = `url('${imageUrl}')`;
+    }
+
+    // Move o cursor customizado para seguir o cursor real do mouse
+    document.addEventListener('mousemove', e => {
+      cursor.style.left = e.clientX + 'px';
+      cursor.style.top = e.clientY + 'px';
+    });
+
+    // Altera a imagem do cursor ao clicar (mousedown) e soltar (mouseup)
+    // ⚠️ Altere os caminhos das imagens do cursor se necessário
+    document.addEventListener('mousedown', () => setCursor('../cursor2/link.gif'));
+    document.addEventListener('mouseup', () => setCursor('../cursor2/auto.gif'));
+
+    // Altera a imagem do cursor ao passar o mouse sobre um botão
+    document.addEventListener('mouseover', e => {
+      const b = e.target.closest('button');
+      if (b) setCursor('../cursor2/alternate.gif');
+    });
+    // Retorna a imagem do cursor ao sair de um botão
+    document.addEventListener('mouseout', e => {
+      const b = e.target.closest('button');
+      if (b) setCursor('../cursor2/auto.gif');
+    });
+  });
+  </script>
+
+    <script>
+  // =====================
+  // LÓGICA PRINCIPAL CORRIGIDA
+  // =====================
+  const valorDinheiroSpan=document.getElementById('valorDinheiro');
+  const valorRodadaSpan=document.getElementById('valorRodada');
+  const linhas=10,colunas=20,tamanhoCelula=60; // Dimensões do mapa e tamanho da célula em pixels
+  const GRAMA=0,TORRE=2,BASE=3,PORTAL=4; // Constantes para identificar o tipo de célula no mapa (matriz)
+  
+  // Variáveis de estado do jogo
+  // ✅ rodada começa em 0 para que a primeira chamada a atualizarRodada() defina para 1
+  let dinheiro=100,rodada=0,jogoIniciado=false,hordaAtiva=false;
+  let gameOver = false;
+  let modoRemocao = false; // Flag para o modo de remoção de torres
+  let modotorre1 = false; // Flag para o modo de torre 1
+  let modotorre2 = false; // Flag para o modo de torre 2
+  let modotorre3 = false; // Flag para o modo de torre 3
+
+  // Dados das torres disponíveis para compra
+  const torresDisponiveis=[
+    {id:"btnTorre1",tipo:1,dano:10,alcance:1.5,velocidade:60,custo:50,cor:'red',nome:"Torre de Fogo",cooldown:0, velocidadeBase: 60, danoBase: 10}, // Fogo: Dano de Área Contínuo
+    {id:"btnTorre2",tipo:2,dano:5,alcance:3,velocidade:30,custo:70,cor:'blue',nome:"Torre de Gelo",cooldown:0, velocidadeBase: 30, danoBase: 5}, // Gelo: Projétil com Slow
+    {id:"btnTorre3",tipo:3,dano:0,alcance:2,velocidade:1,custo:120,cor:'gold',nome:"Torre de Ouro"} // Ouro: Gera dinheiro (sem dano)
+  ];
+  let torreSelecionada=torresDisponiveis[0]; // Torre padrão selecionada inicialmente
+  const mapaTorres=[]; // Lista das torres atualmente colocadas no mapa
+  
+  // Define posições aleatórias para o portal (início) e a base (fim)
+  const portalLinha=Math.floor(Math.random()*linhas);
+  const baseLinha=Math.floor(Math.random()*linhas);
+  
+  // Inicializa o mapa como uma matriz 2D preenchida com GRAMA
+  const mapa=Array.from({length:linhas},()=>Array(colunas).fill(GRAMA));
+  mapa[portalLinha][0]=PORTAL; // Define o portal (coluna 0)
+  mapa[baseLinha][colunas-1]=BASE; // Define a base (coluna final)
+
+  const inicio=[portalLinha,0],fim=[baseLinha,colunas-1]; // Coordenadas [linha, coluna] de início e fim
+  
+  // Configuração do Canvas
+  const canvas=document.querySelector("canvas");
+  const ctx=canvas.getContext("2d");
+  canvas.width=colunas*tamanhoCelula;
+  canvas.height=linhas*tamanhoCelula;
+
+  // A* - Algoritmo para encontrar o caminho mais curto para os inimigos
+  
+  // Função heurística (estimativa de distância até o fim - Manhattan)
+  function heuristica(a,b){return Math.abs(a[0]-b[0])+Math.abs(a[1]-b[1]);}
+  
+  // Implementação do algoritmo A*
+  function astar(mapa,inicio,fim){
+    const aberto=[inicio],fechado=[],g=Array.from({length:linhas},
+    ()=>Array(colunas).fill(Infinity)),
+    f=Array.from({length:linhas},()=>Array(colunas).fill(Infinity)),
+    veio=Array.from({length:linhas},()=>Array(colunas).fill(null));
+
+    g[inicio[0]][inicio[1]]=0;f[inicio[0]][inicio[1]]=heuristica(inicio,fim);
+    while(aberto.length){
+      let atual=aberto.reduce((a,b)=>f[a[0]][a[1]]<f[b[0]][b[1]]?a:b); // Encontra o nó com menor 'f'
+      if(atual[0]===fim[0]&&atual[1]===fim[1]){ // Caminho encontrado
+        const c=[];let t=atual;while(t){c.push(t);t=veio[t[0]][t[1]];}return c.reverse(); // Reconstrói e retorna o caminho
+      }
+      aberto.splice(aberto.findIndex(p=>p[0]===atual[0]&&p[1]===atual[1]),1); // Remove de 'aberto'
+      fechado.push(atual); // Adiciona a 'fechado'
+      const viz=[ // Vizinhos ortogonais (cima, baixo, esquerda, direita)
+      [atual[0]-1,atual[1]],
+      [atual[0]+1,atual[1]],
+      [atual[0],atual[1]-1],
+      [atual[0],atual[1]+1]
+    ];
+
+      for(const [l,c]of viz){
+        if(l<0||l>=linhas||c<0||c>=colunas)continue; // Verifica limites do mapa
+        // Torres (TORRE) são consideradas obstáculos e não podem ser atravessadas
+        if(mapa[l][c]===TORRE)continue; 
+        if(fechado.some(p=>p[0]===l&&p[1]===c))continue; // Pula se já estiver no fechado
+        const tent=g[atual[0]][atual[1]]+1; // Novo custo 'g' (distância real)
+        if(!aberto.some(p=>p[0]===l&&p[1]===c))aberto.push([l,c]); // Adiciona ao aberto se for novo
+        else if(tent>=g[l][c])continue; // Pula se o novo caminho for pior
+        veio[l][c]=atual; // Atualiza o "pai" do nó
+        g[l][c]=tent; // Atualiza 'g'
+        f[l][c]=tent+heuristica([l,c],fim); // Atualiza 'f' = g + h
+      }
+    }
+    return[]; // Retorna vazio se não encontrar caminho
+  }
+  
+  // ✅ 1. Salva o caminho padrão ANTES de qualquer torre ser colocada
+  const caminhoPadrao = astar(mapa, inicio, fim); 
+  let caminhoAEstrela = caminhoPadrao; // Caminho ativo, que será recalculado
+  
+  // Listas de elementos ativos no jogo
+  const inimigos=[],projeteis=[];
+  
+  // Dados base dos tipos de inimigo
+  const tiposInimigoBase=[
+    {nome:"Comum",vida:40,vel:0.5,qtd:8,recompensa:10,cor:"#7CFC00"},
+    {nome:"Médio",vida:100,vel:1,qtd:3,recompensa:25,cor:"#FFA500"},
+    {nome:"Destruidor",vida:180,vel:1.2,qtd:1,recompensa:40,cor:"#9400D3"} 
+  ];
+
+  // Atualiza o valor do dinheiro na UI e aplica um efeito visual
+  function atualizarDinheiro(v){
+    dinheiro+=v;
+    valorDinheiroSpan.textContent=dinheiro;
+    valorDinheiroSpan.classList.add("valorAtualizado");
+    setTimeout(() => valorDinheiroSpan.classList.remove("valorAtualizado"), 500);
+  }
+  
+  // Incrementa e atualiza o número da rodada na UI
+  function atualizarRodada(){
+    rodada++;
+    valorRodadaSpan.textContent=rodada;
+  }
+
+// Função principal de desenho do mapa e elementos
+function desenharMapa() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height); // Limpa o canvas
+
+  // 1️⃣ Desenha a grama de fundo e a grade
+  for (let l = 0; l < linhas; l++) {
+    for (let c = 0; c < colunas; c++) {
+      ctx.fillStyle = '#75a12a'; // Cor da grama
+      ctx.fillRect(c * tamanhoCelula, l * tamanhoCelula, tamanhoCelula, tamanhoCelula);
+      ctx.strokeStyle = '#66855f'; // Cor da grade
+      ctx.strokeRect(c * tamanhoCelula, l * tamanhoCelula, tamanhoCelula, tamanhoCelula);
+    }
+  }
+
+  // 2️⃣ Desenha o caminho atual (recalculado pelo A*)
+  ctx.fillStyle = '#006400'; // Cor do caminho
+  for (const [l, c] of caminhoAEstrela) {
+    ctx.fillRect(c * tamanhoCelula, l * tamanhoCelula, tamanhoCelula, tamanhoCelula);
+  }
+
+  // 3️⃣ Desenha PORTAL, BASE e TORRES (blocos)
+  for (let l = 0; l < linhas; l++) {
+    for (let c = 0; c < colunas; c++) {
+      const x = c * tamanhoCelula;
+      const y = l * tamanhoCelula;
+
+      if (mapa[l][c] === BASE) {
+        ctx.fillStyle = 'gray'; // Cor da Base
+        ctx.fillRect(x, y, tamanhoCelula, tamanhoCelula);
+      } else if (mapa[l][c] === PORTAL) {
+        ctx.fillStyle = '#682cf5'; // Cor do Portal
+        ctx.fillRect(x, y, tamanhoCelula, tamanhoCelula);
+      } else if (mapa[l][c] === TORRE) {
+        const t = mapaTorres.find(t => t.linha === l && t.coluna === c); // Encontra a torre
+        // 🎨 Desenha a torre como um QUADRADO
+        ctx.fillStyle = t ? t.cor : '#444'; // Cor da torre (usa a cor definida na torre)
+        
+        const tamanhoTorre = tamanhoCelula * 0.7; 
+        const offset = (tamanhoCelula - tamanhoTorre) / 2; // Centraliza o quadrado
+        
+        ctx.fillRect(x + offset, y + offset, tamanhoTorre, tamanhoTorre);
+      }
+    }
+  }
+
+// 🎯 Desenhar a área de alcance das torres (visualização)
+mapaTorres.forEach(torre => {
+  // Torre de ouro não ataca e, portanto, não desenha alcance
+  if (torre.tipo === 3 || !torre.alcance) return;
+
+  const centroX = torre.coluna * tamanhoCelula + tamanhoCelula / 2;
+  const centroY = torre.linha * tamanhoCelula + tamanhoCelula / 2;
+  const raio = torre.alcance * tamanhoCelula; // Alcance em pixels
+
+  // Verifica se há inimigo dentro do raio para mudar a cor
+  const inimigoProximo = inimigos.some(i => {
+    const dx = i.x - centroX;
+    const dy = i.y - centroY;
+    return Math.sqrt(dx * dx + dy * dy) <= raio;
+  });
+
+  // Define a cor da área de alcance
+  ctx.fillStyle = inimigoProximo 
+      ? "rgba(255, 0, 0, 0.4)"   // Vermelho forte se estiver atacando
+      : "rgba(232, 247, 250, 0.2)"; // Azul claro/transparente (ou vermelho suave)
+  
+  if(torre.tipo === 2) { // Cor específica para Torre de Gelo
+    ctx.fillStyle = "rgba(100, 100, 255, 0.2)"; 
+  }
+
+  ctx.beginPath();
+  ctx.arc(centroX, centroY, raio, 0, Math.PI * 2); // Desenha o círculo
+  ctx.fill();
+  ctx.closePath();
+});
+
+  // 5️⃣ Desenha inimigos
+  inimigos.forEach(i => {
+    // ⚠️ Se o inimigo estiver sob efeito Slow, desenha azul claro, senão usa a cor original
+    ctx.fillStyle = i.slow > 0 ? "rgba(0, 200, 255, 0.7)" : i.tipo.cor;
+    ctx.beginPath();
+    ctx.arc(i.x, i.y, 12, 0, Math.PI * 2); // Desenha o inimigo como um círculo
+    ctx.fill();
+    ctx.closePath();
+
+    // Desenha a barra de vida
+    const larguraBarra = 30;
+    ctx.fillStyle = "red";
+    // O preenchimento da vida é proporcional à vida atual/máxima
+    ctx.fillRect(i.x - 15, i.y - 20, larguraBarra * (i.vida / i.vidaMax), 4);
+    ctx.strokeStyle = "black";
+    ctx.strokeRect(i.x - 15, i.y - 20, larguraBarra, 4); // Contorno da barra de vida
+  });
+
+  // 6️⃣ Desenha os projéteis
+  projeteis.forEach(p => {
+    ctx.fillStyle = p.cor || 'cyan'; // Cor padrão ciano
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.closePath();
+  });
+}
+
+// O Loop Principal do Jogo (FPS)
+function gameLoop(){
+    if(!jogoIniciado) return; // Se o jogo não foi iniciado (ou deu Game Over), para o loop
+
+    moverInimigos(); // Move inimigos e projéteis (também chama desenharMapa)
+    atacarInimigos(); // Lida com o disparo das torres
+
+    requestAnimationFrame(gameLoop); // ✅ Usa requestAnimationFrame para um loop suave
+}
+
+  // Lógica de movimento dos inimigos
+  function moverInimigos(){
+    // Loop reverso para remoção segura de inimigos
+    for(let idx = inimigos.length - 1; idx >= 0; idx--){
+      const i = inimigos[idx];
+      const caminho=i.caminho; // Caminho A* atual do inimigo
+
+      if(i.pos>=caminho.length-1){
+        // Inimigo chegou à base: Game Over
+        inimigos.splice(idx,1);
+        
+        // 💥 Lógica de Game Over
+        if (!gameOver) { 
+          gameOver = true;
+          jogoIniciado = false; 
+          console.log("GAME OVER! Inimigo chegou à base.");
+          alert("VOCÊ PERDEU! Um inimigo chegou até a base. Rodada final: " + rodada);
+          location.reload(); // Reinicia a página
+        }
+        continue;
+      }
+      
+      // ✅ 8. Aplica o Slow
+      let velAtual = i.tipo.vel;
+      if(i.slow > 0) {
+        velAtual *= 0.5; // Reduz a velocidade pela metade
+        i.slow--; // Decrementa o contador de frames do slow
+      }
+
+      const alvo=caminho[i.pos+1]; // Próxima célula no caminho
+      // Calcula a distância e direção até o centro da próxima célula
+      const dx=alvo[1]*tamanhoCelula+tamanhoCelula/2-i.x;
+      const dy=alvo[0]*tamanhoCelula+tamanhoCelula/2-i.y;
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      
+      if(dist<velAtual){ // Se estiver perto o suficiente, avança para a próxima célula
+        i.pos++;
+        
+        // 7. Lógica do Destruidor: destrói a torre se entrar na célula dela
+        if(i.tipo.nome==="Destruidor de Torres"){
+          const [l, c] = caminho[i.pos]; // Célula atual
+          
+          const torreDestruirIndex = mapaTorres.findIndex(t => t.linha === l && t.coluna === c);
+
+          if(torreDestruirIndex !== -1){
+            // ✅ 5. Remoção da torre do mapa e da lista de torres
+            const t = mapaTorres[torreDestruirIndex];
+            mapa[t.linha][t.coluna] = GRAMA; // Libera o espaço
+            mapaTorres.splice(torreDestruirIndex, 1);
+            console.log("💥 Torre destruída pelo inimigo destruidor!");
+            
+            // Recalcula o caminho A* para o novo mapa
+            caminhoAEstrela = astar(mapa, inicio, fim);
+          }
+        }
+
+      }else{
+        // Move o inimigo na direção do alvo
+        i.x+=(dx/dist)*velAtual;
+        i.y+=(dy/dist)*velAtual;
+      }
+    }
+    moverProjeteis(); // Move os projéteis após mover os inimigos
+    desenharMapa(); // Redesenha o mapa (inimigos em nova posição)
+  }
+ 
+  // Lógica de movimento e colisão de projéteis
+  function moverProjeteis(){
+    // Loop reverso para remoção segura de projéteis
+    for(let idx = projeteis.length - 1; idx >= 0; idx--){
+      const p = projeteis[idx];
+      
+      // Remove projéteis se o alvo não existir ou estiver morto
+      if(!p.alvo || p.alvo.vida <= 0){
+        projeteis.splice(idx,1);
+        continue;
+      }
+      
+      // Calcula a distância e direção até o alvo
+      const dx=p.alvo.x-p.x,dy=p.alvo.y-p.y,dist=Math.sqrt(dx*dx+dy*dy);
+      
+      if(dist<6){ // Colisão: projétil atingiu o alvo
+        p.alvo.vida-=p.dano; // Aplica o dano
+        
+        // Aplica slow se for Torre de Gelo (tipo 2)
+        if(p.tipo === 2) p.alvo.slow = 120; // 120 frames de slow (~2 segundos a 60 FPS)
+        
+        projeteis.splice(idx,1); // Remove o projétil
+        
+        // Se o alvo morreu
+        if(p.alvo.vida<=0){
+          atualizarDinheiro(p.alvo.tipo.recompensa); // Adiciona dinheiro
+          // Encontra e remove o inimigo da lista
+          const inimigoIdx = inimigos.indexOf(p.alvo);
+          if(inimigoIdx !== -1) inimigos.splice(inimigoIdx, 1);
+        }
+      }else{
+        // Move o projétil em direção ao alvo
+        p.x+=(dx/dist)*8; // Velocidade fixa do projétil
+        p.y+=(dy/dist)*8;
+      }
+    }
+  }
+
+  // Lógica de ataque das torres
+  function atacarInimigos(){
+    mapaTorres.forEach(t=>{
+      t.cooldown--; // Diminui o cooldown (para torres de projéteis)
+      
+      // Centro da torre e raio de alcance em pixels
+      const cx=t.coluna*tamanhoCelula+tamanhoCelula/2;
+      const cy=t.linha*tamanhoCelula+tamanhoCelula/2;
+      const raio=t.alcance*tamanhoCelula;
+      
+      if(t.tipo === 1){ // 🔥 Torre de Fogo (Dano Contínuo de Área)
+        for (let idx = inimigos.length - 1; idx >= 0; idx--) {
+          const i = inimigos[idx];
+          // Verifica se o inimigo está dentro do alcance (hipotenusa)
+          if(Math.hypot(i.x-cx,i.y-cy)<=raio){
+            i.vida-=t.dano * 0.05; // Dano por frame (5% do dano)
+            if(i.vida<=0){
+              atualizarDinheiro(i.tipo.recompensa);
+              inimigos.splice(idx,1); // ✅ Remoção segura de inimigos mortos
+            }
+          }
+        }
+      }
+      
+      if(t.tipo === 2){ // ❄️ Torre de Gelo (Projetil com Slow)
+        if(t.cooldown <= 0){ // Pronto para atirar
+          // Encontra o primeiro alvo dentro do alcance
+          const alvo=inimigos.find(i=>Math.hypot(i.x-cx,i.y-cy)<=raio);
+          if(alvo){
+            // Cria um novo projétil
+            projeteis.push({x:cx,y:cy,alvo,dano:t.dano, tipo: 2}); 
+            t.cooldown = t.velocidade; // Reseta o cooldown (velocidade de ataque)
+          }
+        }
+      }
+    });
+  }
+
+  // Geração de dinheiro da Torre de Ouro (tipo 3) - Usa setInterval para tempo fixo
+  setInterval(()=>{
+    // Filtra apenas as torres de Ouro e gera 5 de dinheiro para cada uma a cada 2 segundos
+    mapaTorres.filter(t=>t.tipo===3).forEach(()=>atualizarDinheiro(5));
+  },2000);
+
+// Inicia uma nova horda de inimigos (começa uma nova rodada)
+function iniciarHorda() {
+  if (hordaAtiva) return; // Evita iniciar hordas sobrepostas
+
+  atualizarRodada(); // Incrementa e atualiza a rodada
+  hordaAtiva = true;
+
+  // === LÓGICA DE APRIMORAMENTO DE TODAS as Torres ===
+  // Aprimora a cada 5 rodadas
+  if (rodada % 5 === 0 && rodada > 0) {
+    const nivelAprimoramento = Math.floor(rodada / 5);
+    const fatorReducao = 1 - (nivelAprimoramento * 0.1); // 10% de redução na velocidade/cooldown por nível
+    const fatorAumentoDano = 1 + (nivelAprimoramento * 0.1); // 10% de aumento de dano por nível
+
+    mapaTorres.forEach(torre => {
+      if (torre.tipo === 1 || torre.tipo === 2) {
+        const velocidadeBase = torre.velocidadeBase || torre.velocidade; 
+        // Cooldown mínimo de 5 frames
+        torre.velocidade = Math.max(5, velocidadeBase * fatorReducao); 
+        torre.dano = torre.dano * fatorAumentoDano;
+      }
+    });
+  }
+
+  if (rodada % 1 === 0 && rodada > 0) {
+    const nivelAprimoramento = Math.floor(rodada);
+    const fatorvida = 1 + (nivelAprimoramento * 0.1); // 10% de redução na velocidade/cooldown por nível
+    const fatorquantidade = 1 + (nivelAprimoramento * 0.1); // 10% de aumento de dano por nível
+
+    mapaTorres.forEach(inimigo => {
+      if (torre.tipo === 1 || torre.tipo === 2) {
+        const vida = inimigo.vidamax || inimigo.vida; 
+        // Cooldown mínimo de 5 frames
+        inimigo.vida = Math.max(5, vida * fatorvida); 
+        inimigo.qtd = inimigo.qtd * fatorquantidade;
+      }
+    });
+  }
+  // ===============================================================
+
+  // === Lógica de SPWN da Horda: CRIA OS INIMIGOS ===
+  // Spawna todos os tipos de inimigo definidos
+  tiposInimigoBase.forEach(tipo => spawnInimigos(tipo));  
+  // ===================================================
+
+  // 🔥 Lógica para o tempo de duração da horda e intervalo entre hordas
+  const duracaoBase = 8000; 
+  const intervaloBase = 3000; 
+
+  // Diminui o tempo conforme as rodadas avançam
+  const duracaoHorda = Math.max(3000, duracaoBase - rodada * 400); 
+  const intervaloHorda = Math.max(800, intervaloBase - rodada * 200);
+
+  // Define quando a horda termina e quando a próxima começa
+  setTimeout(() => {
+    hordaAtiva = false;
+    
+    // Inicia a próxima rodada automaticamente se o jogo estiver rodando
+    if(jogoIniciado) setTimeout(iniciarHorda, intervaloHorda);
+  }, duracaoHorda);
+}
+
+// Função para gerar inimigos em sequência
+function spawnInimigos(tipo) {
+  let contador = 0;
+  const intervalo = setInterval(() => {
+    if (contador >= tipo.qtd) {
+      clearInterval(intervalo);
+      return;
+    }
+
+    // Cria um novo objeto inimigo
+    const inimigo = {
+      tipo,
+      qtd: tipo.qtd, // Ajusta a quantidade por rodada
+      vida: tipo.vida,
+      vidaMax: tipo.vida,
+      pos: 0, // Posição inicial no caminho
+      // Posição em pixels no centro do portal
+      x: inicio[1] * tamanhoCelula + tamanhoCelula / 2,
+      y: inicio[0] * tamanhoCelula + tamanhoCelula / 2,
+      // ✅ Inimigos usam o caminho A* atual
+      caminho: caminhoAEstrela, 
+      slow: 0 
+    };
+
+    inimigos.push(inimigo);
+    contador++;
+  }, 1000); // Spawna um inimigo a cada 1 segundo (por tipo)
+}
+
+  // Event Listener para o clique no mapa (colocar/remover torres)
+  canvas.addEventListener('click',e=>{
+    const rect=canvas.getBoundingClientRect();
+    // Converte a posição do clique em coordenadas de célula (coluna e linha)
+    const c=Math.floor((e.clientX-rect.left)/tamanhoCelula);
+    const l=Math.floor((e.clientY-rect.top)/tamanhoCelula);
+
+// === LÓGICA DE REMOÇÃO DA TORRE (Venda) ===
+    if (modoRemocao && mapa[l][c] === TORRE) {
+        const index = mapaTorres.findIndex(t => t.linha === l && t.coluna === c);
+        if (index !== -1) {
+            const torreRemovida = mapaTorres.splice(index, 1)[0];
+            mapa[l][c] = GRAMA; // Libera o espaço
+            
+            // Reembolso de 50% do custo base
+            const torreBase = torresDisponiveis.find(t => t.tipo === torreRemovida.tipo);
+            const reembolso = Math.floor(torreBase.custo * 0.5); 
+            atualizarDinheiro(reembolso);
+            
+            // Recalcula o caminho A* após a remoção
+            caminhoAEstrela = astar(mapa, inicio, fim); 
+            console.log(`Torre vendida! Reembolso de ${reembolso}.`);
+        }
+        desenharMapa();
+        return; // Encerra o clique no modo remoção
+    }
+    // ===================================
+    
+    // Tenta colocar a torre se for grama e se tiver dinheiro
+    if(mapa[l][c]===GRAMA&&dinheiro>=torreSelecionada.custo){
+      
+      // 1. Simula a colocação da torre no mapa (temporariamente)
+      mapa[l][c]=TORRE;
+      const novoCaminho=astar(mapa,inicio,fim); // Tenta calcular o novo caminho
+      
+      if(novoCaminho.length>0){
+        // 2. Sucesso: caminho válido, confirma a colocação
+        // Cria uma cópia da torre selecionada e adiciona ao mapaTorres
+        mapaTorres.push({...torreSelecionada,linha:l,coluna:c}); 
+        atualizarDinheiro(-torreSelecionada.custo);
+        caminhoAEstrela=novoCaminho; // Atualiza o caminho ativo
+        desenharMapa();
+      }else{
+        // 3. Falha: caminho bloqueado
+        mapa[l][c]=GRAMA; // Desfaz a simulação
+        console.log("⚠️ Caminho bloqueado! Inimigo destruidor ativado!");
+        
+        // Ativa um inimigo Destruidor
+        const destruidor={
+          tipo:{nome:"Destruidor de Torres",vida:9999,vel:2,recompensa:0,cor:"#ff0000"},
+          vida:9999,vidaMax:9999,pos:0,
+          caminho: caminhoPadrao, // ✅ O Destruidor usa o caminho Padrão (sem a torre que bloqueia)
+          x:inicio[1]*tamanhoCelula+tamanhoCelula/2,
+          y:inicio[0]*tamanhoCelula+tamanhoCelula/2
+        };
+        inimigos.push(destruidor);
+      }
+    }
+  });
+
+// Lógica para o botão de remoção
+  document.getElementById('btnRemover').onclick = () => {
+    // 1. Alterna o estado de remoção
+    modoRemocao = !modoRemocao;
+
+    // 2. Atualiza o visual e o estado
+    if (modoRemocao) {
+        document.getElementById('btnRemover').classList.add('active'); // Destaque no CSS
+        torreSelecionada = null; // Impede a colocação de torres
+        console.log("Modo Remoção ativado. Clique em uma torre para vender.");
+    } else {
+        document.getElementById('btnRemover').classList.remove('active');
+        torreSelecionada = torresDisponiveis[0]; // Volta para a seleção de torre padrão
+        console.log("Modo Remoção desativado.");
+    }
+    desenharMapa();
+};
+
+// Lógica para o botão de remoção
+  document.getElementById('btnTorre1').onclick = () => {
+    // 1. Alterna o estado de torre1
+    modotorre1 = !modotorre1;
+
+    // 2. Atualiza o visual e o estado
+    if (modotorre1) {
+        document.getElementById('btnTorre1').classList.add('active'); // Destaque no CSS
+        torreSelecionada = torresDisponiveis[0]; // Volta para a seleção de torre padrão 
+        console.log("Clique para colocar uma torre.");
+    } else {
+        document.getElementById('btnTorre1').classList.remove('active');
+        torreSelecionada = null; // Impede a colocação de torres
+        console.log("Desativado.");
+    }
+    desenharMapa();
+};
+
+// Lógica para o botão de remoção
+  document.getElementById('btnTorre2').onclick = () => {
+    // 1. Alterna o estado de torre2
+    modotorre2 = !modotorre2;
+
+    // 2. Atualiza o visual e o estado
+    if (modotorre2) {
+        document.getElementById('btnTorre2').classList.add('active'); // Destaque no CSS
+        torreSelecionada = torresDisponiveis[1]; // Volta para a seleção de torre padrão 
+        console.log("Clique para colocar uma torre.");
+    } else {
+        document.getElementById('btnTorre2').classList.remove('active');
+        torreSelecionada = null; // Impede a colocação de torres
+        console.log("Desativado.");
+    }
+    desenharMapa();
+};
+
+// Lógica para o botão de remoção
+  document.getElementById('btnTorre3').onclick = () => {
+    // 1. Alterna o estado de torre3
+    modotorre3 = !modotorre3;
+
+    // 2. Atualiza o visual e o estado
+    if (modotorre3) {
+        document.getElementById('btnTorre3').classList.add('active'); // Destaque no CSS
+        torreSelecionada = torresDisponiveis[2]; // Volta para a seleção de torre padrão 
+        console.log("Clique para colocar uma torre.");
+    } else {
+        document.getElementById('btnTorre3').classList.remove('active');
+        torreSelecionada = null; // Impede a colocação de torres
+        console.log("Desativado.");
+    }
+    desenharMapa();
+};
+
+  // Lógica para o botão Iniciar
+  document.getElementById('btnIniciar').onclick=()=>{
+    // ✅ Se o jogo não estiver iniciado, inicia o loop e a primeira horda
+    if(!jogoIniciado){
+      jogoIniciado=true;
+      iniciarHorda();
+      gameLoop(); // Inicia o loop principal de animação e lógica
+      document.getElementById('btnIniciar').classList.add('active');
+    }
+  };
+  // Atribui a função de seleção de torre a cada botão de torre
+  torresDisponiveis.forEach(t=>document.getElementById(t.id).onclick=()=>torreSelecionada=t);
+  
+  desenharMapa(); // Desenha o mapa inicial
+  </script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+/* Estilos aplicados ao elemento BODY (o corpo inteiro da página) */
+BODY {
+    /* Oculta o cursor padrão do sistema operacional dentro do corpo da página */
+    cursor: none;
+    /* Define a cor de fundo do corpo da página como um tom de ciano/azul-petróleo claro */
+    background-color: #7eb2b2;
+    /* Configura o BODY como um container flexível */
+    display: flex;
+    /* Centraliza os itens filhos horizontalmente ao longo do eixo principal (horizontal) */
+    justify-content: center;
+    /* Centraliza os itens filhos verticalmente ao longo do eixo transversal (vertical) */
+    align-items: center;
+    /* Define a altura do corpo para ocupar 100% da altura da viewport (tela visível) */
+    height: 100vh;
+}
+
+/* Estilos aplicados ao elemento com o ID "custom-cursor" */
+#custom-cursor {
+    /* Fixa a posição do elemento na viewport, para que ele não se mova com a rolagem */
+    position: fixed;
+    /* Define a largura do cursor personalizado */
+    width: 32px;
+    /* Define a altura do cursor personalizado */
+    height: 32px;
+    /* Garante que este elemento não seja um alvo de eventos do mouse (cliques, etc.), permitindo que interaja com os elementos abaixo dele */
+    pointer-events: none;
+    /* Define a imagem de fundo do cursor personalizado, buscando um arquivo GIF */
+    background-image: url('../cursor2/auto.gif');
+    /* Ajusta o tamanho da imagem de fundo para cobrir todo o container (32x32px) */
+    background-size: contain;
+    /* Impede que a imagem de fundo se repita */
+    background-repeat: no-repeat;
+    /* Define uma alta ordem de empilhamento para garantir que o cursor fique acima de quase todos os outros elementos */
+    z-index: 9999;
+    /* Aplica uma transição suave à propriedade background-image por 0.2 segundos com função de temporização ease-in-out */
+    transition: background-image 0.2s ease-in-out;
+}
+
+/* Estilos aplicados ao elemento com o ID "amarelo" */
+#amarelo {
+    /* Oculta o cursor padrão dentro deste elemento */
+    cursor: none;
+    /* Define a cor de fundo como um tom de amarelo claro */
+    background-color: #f4f479;
+    /* Define a largura mínima para 100 pixels */
+    min-width:100px;
+    /* Define a altura mínima para 50 pixels */
+    min-height: 50px;
+    /* Adiciona margem de 10 pixels à esquerda */
+    margin-left: 10px;
+    /* Adiciona margem de 10 pixels à direita */
+    margin-right: 10px;
+    /* Aplica uma transição suave à propriedade transform por 0.3 segundos com função de temporização ease-in-out */
+    transition: transform 0.3s ease-in-out;
+}
+
+/* Estilos adicionais aplicados ao elemento "amarelo" quando ele também tem a classe "is-enlarged" */
+#amarelo.is-enlarged {
+    /* Aumenta o tamanho do elemento em 5% (1.05 vezes) */
+    transform: scale(1.05);
+}
+
+/* Estilos aplicados a todos os elementos com a classe "verde" */
+.verde {
+    /* Oculta o cursor padrão dentro deste elemento */
+    cursor: none;
+    /* Define a cor de fundo como um tom de verde claro/neon */
+    background-color: #8bff8b;
+    /* Define a largura mínima para 100 pixels */
+    min-width:100px;
+    /* Define a altura para 50 pixels */
+    height: 50px;
+    /* Alinha o texto ao centro horizontalmente */
+    text-align:center;
+    /* Aplica um raio de borda de 10 pixels para cantos arredondados */
+    border-radius: 10px;
+}
+
+/* Estilos aplicados a todos os elementos com a classe "azul" */
+.azul {
+    /* Oculta o cursor padrão dentro deste elemento */
+    cursor: none;
+    /* Define a cor de fundo como um tom de azul/roxo claro */
+    background-color: #9f9fff;
+    /* Define a largura mínima para 100 pixels */
+    min-width:100px;
+    /* Define a altura para 50 pixels */
+    height: 50px;
+    /* Alinha o texto ao centro horizontalmente */
+    text-align:center;
+    /* Aplica um raio de borda de 10 pixels para cantos arredondados */
+    border-radius: 10px;
+}
+
+/* Estilos aplicados ao elemento com o ID "g-verde" (provavelmente um grupo/container verde) */
+#g-verde {
+    /* Configura o container como um flexível */
+    display: flex;
+    /* Organiza os itens filhos verticalmente (de cima para baixo) */
+    flex-direction: column;
+    /* Adiciona um espaço de 10 pixels entre os itens filhos (gap) */
+    gap: 10px;
+    /* Alinha o texto ao centro (útil para conteúdo dentro dos filhos) */
+    text-align: center;
+}
+
+/* Estilos aplicados ao elemento com o ID "g-azul" (provavelmente um grupo/container azul) */
+#g-azul {
+    /* Configura o container como um flexível */
+    display: flex;
+    /* Organiza os itens filhos verticalmente (de cima para baixo) */
+    flex-direction: column;
+    /* Adiciona um espaço de 10 pixels entre os itens filhos (gap) */
+    gap: 10px;
+    /* Alinha o texto ao centro (útil para conteúdo dentro dos filhos) */
+    text-align: center;
+}
+
+/* Estilos aplicados ao elemento com o ID "tverde1" (provavelmente um texto/título verde superior) */
+#tverde1 {
+    /* Remove a margem inferior (útil para eliminar o espaçamento padrão de parágrafos/títulos) */
+    margin-bottom: 0%;
+}
+
+/* Estilos aplicados ao elemento com o ID "tverde2" (provavelmente um texto/título verde inferior) */
+#tverde2{
+    /* Remove a margem superior (útil para eliminar o espaçamento padrão de parágrafos/títulos) */
+    margin-top: 0%;
+}
+
+/* Estilos aplicados ao elemento com o ID "tazul1" (provavelmente um texto/título azul superior) */
+#tazul1 {
+    /* Remove a margem inferior */
+    margin-bottom: 0%;  
+}
+
+/* Estilos aplicados ao elemento com o ID "tazul2" (provavelmente um texto/título azul inferior) */
+#tazul2{
+    /* Remove a margem superior */
+    margin-top: 0%;
+}

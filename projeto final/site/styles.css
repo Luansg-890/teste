@@ -1,0 +1,116 @@
+@import url('https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400..700&display=swap');
+
+
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Pixelify Sans", sans-serif;
+
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #252323 ;
+    background-size: cover;
+    background-attachment: fixed;
+
+
+}
+
+.container {
+    width: 420px;
+    background-color: transparent;
+    border: 2px solid rgba(255, 255, 255, .2);
+    border-radius: 10px;
+    padding: 30px 40px;
+    box-shadow: rgba(0, 0, 0, 0.4) 0px 2px 4px, rgba(0, 0, 0, 0.3) 0px 7px 13px -3px, rgba(0, 0, 0, 0.2) 0px -3px 0px inset;
+}
+
+.container h1 {
+    font-size: 35px;
+    text-align: center;
+    color: #e2e2e2;
+}
+
+.input-box {
+    position: relative;
+    width: 100%;
+    height: 50px;
+    margin: 15px 0;
+}
+
+
+
+.input-box input {
+    width: 100%;
+    height: 100%;
+    background-color: transparent;
+    border: 2px solid  rgba(255, 255, 255, .2);
+    border-radius: 40px;
+    outline: none;
+    font-size: 16px;
+    color: #fff;
+    padding: 20px 45px 20px 20px;
+}
+
+.input-box input::placeholder {
+    color: #ffffffbb ;
+}
+
+.esqueci-lembro {
+    display: flex;
+    justify-content: space-between;
+    margin: -15px 0 15px;
+
+}
+
+.esqueci-lembro a {
+    text-decoration: none;
+    color: #8f9aff;
+}
+
+.esqueci-lembro a:hover {
+    text-decoration: underline;
+    
+}
+
+.login {
+    width: 100%;
+    height: 50px;
+    background-color: #fff;
+    border: none;
+    border-radius: 40px;
+    cursor: pointer;
+    font-size: 16px;
+    color: #000;
+    font-weight: 600;
+}
+
+.login:hover {
+    
+    background-color: rgba(3, 33, 133, 0.479);
+    box-shadow: rgba(1, 53, 102, 0.521) 0px 14px 28px, rgba(0, 0, 0, 0.22) 0px 10px 10px;
+    color: #e2e2e2;
+    transition: 0.30s;
+}
+
+.nova-conta {
+    margin-top: 20px ;
+    color: #e2e2e2
+}
+
+#criar-conta {
+    color: #8f9aff;
+}
+
+#teste {
+    color: #cfcfcf;
+    display: none;
+}
+
+

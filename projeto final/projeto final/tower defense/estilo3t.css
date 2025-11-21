@@ -1,0 +1,279 @@
+/* ------------------------------------------- */
+/* ESTILOS GERAIS E LAYOUT DA PÁGINA */
+/* ------------------------------------------- */
+
+body {
+    /* Remove o cursor padrão do sistema */
+    cursor: none;
+    /* Fundo mais escuro e sóbrio para a página */
+    background-color: #38424a; 
+    /* Configura o body como um container flexível */
+    display: flex;
+    /* Alinha os itens na vertical (coluna) */
+    flex-direction: column;
+    /* Centraliza o conteúdo verticalmente */
+    justify-content: center;
+    /* Centraliza o conteúdo horizontalmente */
+    align-items: center;
+    /* CORREÇÃO PARA PERMITIR ROLAGEM: Usa altura mínima de 100% da viewport, mas permite crescer */
+    min-height: 100vh; 
+    /* Remove a margem padrão do navegador */
+    margin: 0;
+    /* Define uma família de fontes moderna */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    /* Define a cor padrão do texto (branco suave) */
+    color: #f0f0f0;
+}
+
+/* ------------------------------------------- */
+/* CURSOR PERSONALIZADO */
+/* ------------------------------------------- */
+
+#custom-cursor {
+    /* Define a posição fixa para que o cursor não se mova com a rolagem */
+    position: fixed;
+    /* Largura do elemento cursor */
+    width: 32px;
+    /* Altura do elemento cursor */
+    height: 32px;
+    /* Impede que o cursor interaja com cliques (deixa passar para os elementos abaixo) */
+    pointer-events: none;
+    /* Define a imagem de fundo do cursor */
+    /* Nota: Se o caminho relativo estiver incorreto, a imagem não aparecerá */
+    background-image: url('../cursor2/auto.gif'); 
+    /* Garante que a imagem caiba no elemento */
+    background-size: contain;
+    /* Evita a repetição da imagem */
+    background-repeat: no-repeat;
+    /* Centraliza o cursor exatamente no ponto do mouse */
+    transform: translate(-50%, -50%);
+    /* Garante que o cursor fique sobre todos os outros elementos */
+    z-index: 9999;
+    /* Posições iniciais (serão atualizadas pelo JavaScript) */
+    left: 0px;
+    top: 0px;
+    /* Adiciona uma transição suave para mudanças de imagem/estado do cursor */
+    transition: background-image 0.2s ease-in-out;
+}
+
+/* ------------------------------------------- */
+/* CONTAINER PRINCIPAL (UI e BOTÕES) */
+/* ------------------------------------------- */
+
+#ui-container {
+    /* Configura o container para ser flexível */
+    display: flex;
+    /* Organiza os filhos em coluna (barra de info acima dos botões) */
+    flex-direction: column; 
+    /* Centraliza os itens horizontalmente */
+    align-items: center;
+    /* Espaço de 2px entre os itens (barra de info e botões) */
+    gap: 2px; 
+    /* Margem abaixo do container para separá-lo do mapa */
+    margin-bottom: 25px;
+    /* Preenchimento interno */
+    padding: 15px;
+    /* Cor de fundo semi-transparente para o container */
+    background-color: rgba(30, 35, 40, 0.7);
+    /* Cantos arredondados */
+    border-radius: 15px;
+    /* Sombra para profundidade */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+/* ------------------------------------------- */
+/* BARRA DE INFORMAÇÕES (DINHEIRO E RODADA) */
+/* ------------------------------------------- */
+
+#info-bar {
+    /* Configura a barra para ser flexível */
+    display: flex; 
+    /* Espaço entre os itens (Dinheiro e Rodada) */
+    gap: 30px; 
+    /* Distribui o espaço uniformemente entre os elementos */
+    justify-content: space-around;
+    /* Alinha os itens verticalmente no centro */
+    align-items: center;
+    
+    /* Gradiente de fundo sutil */
+    background: linear-gradient(90deg, #1f2428, #2e343a); 
+    /* Borda sutil */
+    border: 1px solid #4a545c;
+    /* Cantos arredondados */
+    border-radius: 10px;
+    /* Preenchimento interno */
+    padding: 10px 30px;
+    /* Sombra para destaque */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    /* Cor do texto dentro da barra */
+    color: #fff;
+    /* Garante uma largura mínima para a barra */
+    min-width: 500px;
+}
+
+/* Estilos individuais para as caixas de Dinheiro e Rodada */
+#info-dinheiro, #info-rodada {
+    /* Layout flexível para alinhar ícone e texto */
+    display: flex;
+    /* Centraliza o conteúdo verticalmente */
+    align-items: center;
+    /* Tamanho da fonte */
+    font-size: 18px;
+}
+
+/* Estiliza os valores (o número) */
+#info-dinheiro span, #info-rodada span {
+    /* Fonte em negrito */
+    font-weight: bold;
+    /* Cor dourada para o valor do dinheiro */
+    color: #ffd700; 
+    /* Sombra de texto para um leve brilho dourado */
+    text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+    /* Espaçamento à esquerda do valor */
+    margin-left: 8px;
+}
+
+/* Adiciona ícones usando o pseudo-elemento ::before */
+#info-dinheiro::before {
+    /* Conteúdo do ícone de dinheiro (emojis) */
+    content: "💰 ";
+    /* Tamanho do ícone */
+    font-size: 20px;
+    /* Espaçamento à direita do ícone */
+    margin-right: 5px;
+}
+
+#info-rodada::before {
+    /* Conteúdo do ícone de rodada (emojis) */
+    content: "⚔️ ";
+    /* Tamanho do ícone */
+    font-size: 20px;
+    /* Espaçamento à direita do ícone */
+    margin-right: 5px;
+}
+
+/* ------------------------------------------- */
+/* ANIMAÇÃO DE ATUALIZAÇÃO DE VALORES */
+/* ------------------------------------------- */
+
+/* Define a animação de brilho temporário */
+@keyframes atualizarValor {
+    /* Início da animação: cor verde brilhante */
+    0% { color: #00e676; text-shadow: 0 0 10px rgba(0, 230, 118, 1); }
+    /* Meio da animação: volta para a cor neutra */
+    50% { color: #f0f0f0; text-shadow: none; }
+    /* Fim da animação: retorna à cor dourada original */
+    100% { color: #ffd700; text-shadow: 0 0 5px rgba(255, 215, 0, 0.5); }
+}
+
+/* Classe aplicada via JS para iniciar a animação */
+.valorAtualizado {
+    /* Aplica a animação com duração de 0.5 segundos */
+    animation: atualizarValor 0.5s ease;
+}
+
+/* ------------------------------------------- */
+/* BOTÕES DE INTERAÇÃO (TORRES E INICIAR) */
+/* ------------------------------------------- */
+
+/* Container dos botões de compra de torres */
+#botoesTorres {
+    /* Layout flexível */
+    display: flex;
+    /* Espaço entre os botões */
+    gap: 2px;
+}
+
+/* Classe para o tamanho dos ícones/imagens das torres dentro dos botões */
+.t{
+    /* Largura fixa */
+    width: 70px;
+    /* Altura fixa */
+    height: 70px;
+}
+
+/* Estilo base de todos os botões dentro do container de torres */
+#botoesTorres button {
+    /* Cor de fundo padrão */
+    background-color: #3b424d;
+    /* Borda */
+    border: 2px solid #5a6470;
+    /* Cantos arredondados */
+    border-radius: 8px;
+    /* Preenchimento interno */
+    padding: 10px; 
+    /* Indica que é clicável */
+    cursor: pointer;
+    /* Transição suave para efeitos de hover e clique */
+    transition: all 0.2s ease-out;
+    /* Garante que o conteúdo seja centralizado verticalmente (altura da linha 0) */
+    line-height: 0; 
+    /* Sombra sutil */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+/* Efeito ao passar o mouse sobre os botões que não estão ativos */
+#botoesTorres button:hover(.active) {
+    /* Fundo ligeiramente mais claro */
+    background-color: #515c6b;
+    /* Efeito de "levantar" */
+    transform: translateY(-2px);
+    /* Sombra mais pronunciada */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* 🚨 Destaque para o Modo Remoção Ativo ou Clicado (usado via JS) */
+#btnRemover.active, #btnTorre1.active, #btnTorre2.active, #btnTorre3.active, #btnRemover:active, #btnTorre1:active, #btnTorre2:active, #btnTorre3:active {
+    /* Cor de fundo vermelha (indica remoção/perigo) */
+    background-color: #ff3b3b; 
+    /* Cor da borda vermelha mais clara */
+    border-color: #ff7f7f;
+    /* Brilho vermelho intenso */
+    box-shadow: 0 0 15px rgba(255, 59, 59, 0.8);
+    /* Efeito de escala para dar ênfase */
+    transform: scale(1.1);
+}
+
+/* Estilo do Botão de Iniciar */
+#btnIniciar.active, #btnIniciar:active {
+    /* Cor de fundo azul (ação principal) */
+    background-color: #007bff;
+    /* Cor da borda azul mais clara */
+    border-color: #3b9bff;
+}
+
+/* Efeito hover para o botão Iniciar */
+#btnIniciar:hover {
+    /* Cor de fundo azul mais escura no hover */
+    background-color: #0056b3;
+}
+
+
+/* ------------------------------------------- */
+/* MAPA / CANVAS */
+/* ------------------------------------------- */
+
+#map {
+    /* A largura se ajusta ao conteúdo (o canvas) */
+    width: fit-content; 
+    /* A altura se ajusta ao conteúdo (o canvas) */
+    height: fit-content;
+    /* Define o contexto de posicionamento para elementos filhos (como torres) */
+    position: relative;
+    /* Borda grossa e escura */
+    border: 3px solid #1f2428;
+    /* Sombra forte para destacar o mapa */
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.9);
+    /* Cantos arredondados */
+    border-radius: 8px;
+    /* Garante que nada transborde da área do mapa */
+    overflow: hidden;
+}
+
+/* Estilo específico para o elemento canvas dentro do #map */
+#map canvas {
+    /* Fundo transparente (se o mapa for desenhado separadamente) */
+    background-color: transparent;
+    /* Garante que o canvas seja um elemento de bloco */
+    display: block;
+}
